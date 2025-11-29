@@ -1,4 +1,4 @@
-export type Frequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'YEARLY';
+export type Frequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'YEARLY' | 'EVERY_X_DAYS' | 'SPECIFIC_DAY';
 
 export interface Profile {
   id: string;
@@ -24,6 +24,7 @@ export interface Benefit {
   benefit_name: string;
   amount: number;
   frequency: Frequency;
+  custom_value?: number;
   next_payment_date: string;
 }
 
@@ -31,6 +32,7 @@ export interface Payday {
   id: string;
   user_id: string;
   frequency: Frequency;
+  custom_value?: number;
   next_payday_date: string;
 }
 

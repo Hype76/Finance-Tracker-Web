@@ -19,10 +19,30 @@ const Projections: React.FC = () => {
     
     // 2. Calculate recurring monthly benefit income
     const monthlyBenefits = benefits.reduce((acc, b) => {
-      if (b.frequency === 'WEEKLY') return acc + (b.amount * 52 / 12);
-      if (b.frequency === 'FORTNIGHTLY') return acc + (b.amount * 26 / 12);
-      if (b.frequency === 'MONTHLY') return acc + b.amount;
-      return acc;
+      let monthlyValue = 0;
+      switch(b.frequency) {
+        case 'WEEKLY': 
+          monthlyValue = (b.amount * 52) / 12;
+          break;
+        case 'FORTNIGHTLY':
+          monthlyValue = (b.amount * 26) / 12;
+          break;
+        case 'MONTHLY':
+        case 'SPECIFIC_DAY': // Assumes once per month
+          monthlyValue = b.amount;
+          break;
+        case 'YEARLY':
+          monthlyValue = b.amount / 12;
+          break;
+        case 'EVERY_X_DAYS':
+          const days = b.custom_value || 1;
+          const paymentsPerYear = 365 / days;
+          monthlyValue = (b.amount * paymentsPerYear) / 12;
+          break;
+        default:
+          monthlyValue = 0;
+      }
+      return acc + monthlyValue;
     }, 0);
 
     // 3. Project for next 6 months
