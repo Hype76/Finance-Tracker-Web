@@ -47,6 +47,33 @@ export interface RecurringExpense {
   next_due_date: string;
 }
 
+export interface Asset {
+  id: string;
+  user_id: string;
+  name: string;
+  value: number;
+  type: string; // Real Estate, Vehicle, Cash, Investment, Other
+  notes?: string;
+}
+
+export interface Debt {
+  id: string;
+  user_id: string;
+  name: string;
+  balance: number;
+  interest_rate: number;
+  minimum_payment: number;
+}
+
+export interface Goal {
+  id: string;
+  user_id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  target_date?: string;
+}
+
 export interface ProjectionData {
   month: string;
   expectedIncome: number;
@@ -60,4 +87,8 @@ export const INCOME_CATEGORIES = [
 
 export const EXPENSE_CATEGORIES = [
   'Housing', 'Utilities', 'Food', 'Transport', 'Healthcare', 'Entertainment', 'Debt', 'Other'
+];
+
+export const ASSET_TYPES = [
+  'Real Estate', 'Vehicle', 'Cash/Bank', 'Investment', 'Crypto', 'Valuables', 'Other'
 ];

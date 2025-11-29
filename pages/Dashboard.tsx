@@ -1,20 +1,23 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '../components/UI';
-import { fetchTransactions, fetchBenefits, fetchPaydays } from '../services/data';
+import { fetchTransactions, fetchBenefits, fetchPaydays, fetchAssets, fetchDebts } from '../services/data';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format } from 'date-fns';
-import { ArrowUpCircle, ArrowDownCircle, Wallet, Calendar } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, Wallet, Calendar, Building2 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { data: income = [] } = useQuery({ queryKey: ['assetflow_income'], queryFn: () => fetchTransactions('INCOME') });
   const { data: expenses = [] } = useQuery({ queryKey: ['assetflow_expenses'], queryFn: () => fetchTransactions('EXPENSE') });
   const { data: benefits = [] } = useQuery({ queryKey: ['assetflow_benefits'], queryFn: fetchBenefits });
   const { data: paydays = [] } = useQuery({ queryKey: ['assetflow_paydays'], queryFn: fetchPaydays });
+  
+  // New queries for Net Worth
+  const { data: assets = [] } = useQuery({ queryKey: ['assetflow_assets'], queryFn: fetchAssets });
+  const { data: debts = [] } = useQuery({ queryKey: ['assetflow_debts'], queryFn: fetchDebts });
 
   const currentMonthStats = useMemo(() => {
     const now = new Date();
-    // Use native Date methods to avoid import issues with date-fns versions
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
@@ -39,9 +42,14 @@ const Dashboard: React.FC = () => {
     };
   }, [income, expenses]);
 
+  const netWorth = useMemo(() => {
+    const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+    const totalDebts = debts.reduce((sum, d) => sum + d.balance, 0);
+    return totalAssets - totalDebts;
+  }, [assets, debts]);
+
   const nextBenefit = useMemo(() => {
     if (!benefits.length) return null;
-    // Simple sort for now, ideally filter for future dates
     return benefits.sort((a, b) => new Date(a.next_payment_date).getTime() - new Date(b.next_payment_date).getTime())[0];
   }, [benefits]);
 
@@ -67,7 +75,19 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 md:col-span-1 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/10 rounded-lg">
+              <Building2 size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-400">Total Net Worth</p>
+              <h3 className="text-2xl font-bold">${netWorth.toLocaleString()}</h3>
+            </div>
+          </div>
+        </Card>
+
         <Card className="p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-lg text-green-600">

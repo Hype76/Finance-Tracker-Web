@@ -8,7 +8,11 @@ import {
   CalendarDays, 
   Wallet, 
   LogOut,
-  LineChart
+  LineChart,
+  Building2,
+  CreditCard,
+  Target,
+  FileText
 } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,11 +25,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { label: 'Assets', path: '/assets', icon: Building2 },
+    { label: 'Debts', path: '/debts', icon: CreditCard },
+    { label: 'Goals', path: '/goals', icon: Target },
     { label: 'Income', path: '/income', icon: TrendingUp },
     { label: 'Expenses', path: '/expenses', icon: TrendingDown },
     { label: 'Benefits', path: '/benefits', icon: Wallet },
     { label: 'Payday', path: '/payday', icon: CalendarDays },
     { label: 'Projections', path: '/projections', icon: LineChart },
+    { label: 'Reports', path: '/reports', icon: FileText },
   ];
 
   return (
@@ -92,7 +100,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-20 pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-20 pb-safe overflow-x-auto">
         {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -100,7 +108,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center p-2 text-xs font-medium rounded-lg transition-colors ${
+                className={`flex flex-col items-center p-2 min-w-[60px] text-[10px] font-medium rounded-lg transition-colors ${
                   isActive 
                     ? 'text-primary-600' 
                     : 'text-gray-500'

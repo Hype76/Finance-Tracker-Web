@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { Transaction, Benefit, Payday, RecurringExpense } from '../types';
+import { Transaction, Benefit, Payday, RecurringExpense, Asset, Debt, Goal } from '../types';
 
+// --- Transactions ---
 export const fetchTransactions = async (type: 'INCOME' | 'EXPENSE') => {
   const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
   const { data, error } = await supabase
@@ -10,7 +11,6 @@ export const fetchTransactions = async (type: 'INCOME' | 'EXPENSE') => {
   
   if (error) throw error;
   
-  // Normalize date field for frontend
   return (data || []).map(item => ({
     ...item,
     type,
@@ -18,6 +18,13 @@ export const fetchTransactions = async (type: 'INCOME' | 'EXPENSE') => {
   })) as Transaction[];
 };
 
+export const deleteTransaction = async (id: string, type: 'INCOME' | 'EXPENSE') => {
+  const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
+  const { error } = await supabase.from(table).delete().eq('id', id);
+  if (error) throw error;
+};
+
+// --- Recurring Items ---
 export const fetchBenefits = async () => {
   const { data, error } = await supabase
     .from('assetflow_benefits')
@@ -42,19 +49,12 @@ export const fetchRecurringExpenses = async () => {
     .select('*')
     .order('next_due_date', { ascending: true });
   
-  // If table doesn't exist yet, return empty array to prevent app crash during setup
   if (error && error.code === '42P01') { 
-    console.warn('Recurring expenses table not found. Please run SQL setup.');
+    console.warn('Recurring expenses table not found.');
     return [];
   }
   if (error) throw error;
   return data as RecurringExpense[];
-};
-
-export const deleteTransaction = async (id: string, type: 'INCOME' | 'EXPENSE') => {
-  const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
-  const { error } = await supabase.from(table).delete().eq('id', id);
-  if (error) throw error;
 };
 
 export const deleteBenefit = async (id: string) => {
@@ -69,5 +69,53 @@ export const deletePayday = async (id: string) => {
 
 export const deleteRecurringExpense = async (id: string) => {
   const { error } = await supabase.from('assetflow_recurring_expenses').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// --- NEW MODULES: Assets, Debts, Goals ---
+
+export const fetchAssets = async () => {
+  const { data, error } = await supabase
+    .from('assetflow_assets')
+    .select('*')
+    .order('value', { ascending: false });
+  // Graceful fallback if table missing during dev
+  if (error && error.code === '42P01') return [];
+  if (error) throw error;
+  return data as Asset[];
+};
+
+export const deleteAsset = async (id: string) => {
+  const { error } = await supabase.from('assetflow_assets').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const fetchDebts = async () => {
+  const { data, error } = await supabase
+    .from('assetflow_debts')
+    .select('*')
+    .order('balance', { ascending: false });
+  if (error && error.code === '42P01') return [];
+  if (error) throw error;
+  return data as Debt[];
+};
+
+export const deleteDebt = async (id: string) => {
+  const { error } = await supabase.from('assetflow_debts').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const fetchGoals = async () => {
+  const { data, error } = await supabase
+    .from('assetflow_goals')
+    .select('*')
+    .order('target_date', { ascending: true });
+  if (error && error.code === '42P01') return [];
+  if (error) throw error;
+  return data as Goal[];
+};
+
+export const deleteGoal = async (id: string) => {
+  const { error } = await supabase.from('assetflow_goals').delete().eq('id', id);
   if (error) throw error;
 };
