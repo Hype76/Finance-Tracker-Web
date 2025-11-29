@@ -30,7 +30,7 @@ const Benefits: React.FC = () => {
     queryFn: fetchBenefits 
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
 

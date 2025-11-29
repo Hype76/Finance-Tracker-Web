@@ -31,7 +31,7 @@ const Expenses: React.FC = () => {
     queryFn: () => fetchTransactions('EXPENSE') 
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
   

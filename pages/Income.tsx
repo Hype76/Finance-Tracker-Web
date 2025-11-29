@@ -31,7 +31,7 @@ const Income: React.FC = () => {
     queryFn: () => fetchTransactions('INCOME') 
   });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   });
   
