@@ -1,0 +1,50 @@
+export type Frequency = 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'YEARLY';
+
+export interface Profile {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  user_id: string;
+  title: string;
+  amount: number;
+  date: string; // date_received or date_paid
+  category: string;
+  notes?: string;
+  attachment_url?: string;
+  type: 'INCOME' | 'EXPENSE';
+}
+
+export interface Benefit {
+  id: string;
+  user_id: string;
+  benefit_name: string;
+  amount: number;
+  frequency: Frequency;
+  next_payment_date: string;
+}
+
+export interface Payday {
+  id: string;
+  user_id: string;
+  frequency: Frequency;
+  next_payday_date: string;
+}
+
+export interface ProjectionData {
+  month: string;
+  expectedIncome: number;
+  expectedExpenses: number;
+  projectedSavings: number;
+}
+
+export const INCOME_CATEGORIES = [
+  'Salary', 'Freelance', 'Business', 'Investment', 'Gift', 'Other'
+];
+
+export const EXPENSE_CATEGORIES = [
+  'Housing', 'Utilities', 'Food', 'Transport', 'Healthcare', 'Entertainment', 'Debt', 'Other'
+];
