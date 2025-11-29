@@ -3,26 +3,33 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '../components/UI';
 import { fetchTransactions, fetchBenefits, fetchPaydays } from '../services/data';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { format, startOfMonth, endOfMonth, isWithinInterval, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ArrowUpCircle, ArrowDownCircle, Wallet, Calendar } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { data: income = [] } = useQuery({ queryKey: ['income'], queryFn: () => fetchTransactions('INCOME') });
-  const { data: expenses = [] } = useQuery({ queryKey: ['expenses'], queryFn: () => fetchTransactions('EXPENSE') });
-  const { data: benefits = [] } = useQuery({ queryKey: ['benefits'], queryFn: fetchBenefits });
-  const { data: paydays = [] } = useQuery({ queryKey: ['paydays'], queryFn: fetchPaydays });
+  const { data: income = [] } = useQuery({ queryKey: ['assetflow_income'], queryFn: () => fetchTransactions('INCOME') });
+  const { data: expenses = [] } = useQuery({ queryKey: ['assetflow_expenses'], queryFn: () => fetchTransactions('EXPENSE') });
+  const { data: benefits = [] } = useQuery({ queryKey: ['assetflow_benefits'], queryFn: fetchBenefits });
+  const { data: paydays = [] } = useQuery({ queryKey: ['assetflow_paydays'], queryFn: fetchPaydays });
 
   const currentMonthStats = useMemo(() => {
     const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
+    // Use native Date methods to avoid import issues with date-fns versions
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
     const monthlyIncome = income
-      .filter(i => isWithinInterval(new Date(i.date), { start, end }))
+      .filter(i => {
+        const d = new Date(i.date);
+        return d >= start && d <= end;
+      })
       .reduce((sum, item) => sum + item.amount, 0);
 
     const monthlyExpenses = expenses
-      .filter(e => isWithinInterval(new Date(e.date), { start, end }))
+      .filter(e => {
+        const d = new Date(e.date);
+        return d >= start && d <= end;
+      })
       .reduce((sum, item) => sum + item.amount, 0);
 
     return {

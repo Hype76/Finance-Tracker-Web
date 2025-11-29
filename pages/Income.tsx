@@ -6,14 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase, uploadFile, getFileUrl } from '../lib/supabase';
 import { fetchTransactions, deleteTransaction } from '../services/data';
 import { Button, Input, Select, Card } from '../components/UI';
-import { INCOME_CATEGORIES, Transaction } from '../types';
+import { INCOME_CATEGORIES } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { format } from 'date-fns';
 import { Plus, Trash2, FileText, X } from 'lucide-react';
 
 const schema = z.object({
   title: z.string().min(2, 'Title is required'),
-  amount: z.string().transform((val) => Number(val)).refine((val) => val > 0, 'Amount must be positive'),
+  amount: z.coerce.number().positive('Amount must be positive'),
   date_received: z.string().min(1, 'Date is required'),
   category: z.string().min(1, 'Category is required'),
   notes: z.string().optional(),
@@ -27,7 +27,7 @@ const Income: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { data: incomeList = [], isLoading } = useQuery({ 
-    queryKey: ['income'], 
+    queryKey: ['assetflow_income'], 
     queryFn: () => fetchTransactions('INCOME') 
   });
 
@@ -39,7 +39,7 @@ const Income: React.FC = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: FormData & { attachment_url?: string }) => {
-      const { error } = await supabase.from('income').insert([{
+      const { error } = await supabase.from('assetflow_income').insert([{
         user_id: user?.id,
         title: data.title,
         amount: data.amount,
@@ -51,7 +51,7 @@ const Income: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['income'] });
+      queryClient.invalidateQueries({ queryKey: ['assetflow_income'] });
       setIsAdding(false);
       reset();
       setSelectedFile(null);
@@ -60,7 +60,7 @@ const Income: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteTransaction(id, 'INCOME'),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['income'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assetflow_income'] })
   });
 
   const onSubmit = async (data: FormData) => {

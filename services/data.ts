@@ -2,8 +2,9 @@ import { supabase } from '../lib/supabase';
 import { Transaction, Benefit, Payday } from '../types';
 
 export const fetchTransactions = async (type: 'INCOME' | 'EXPENSE') => {
+  const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
   const { data, error } = await supabase
-    .from(type === 'INCOME' ? 'income' : 'expenses')
+    .from(table)
     .select('*')
     .order(type === 'INCOME' ? 'date_received' : 'date_paid', { ascending: false });
   
@@ -19,7 +20,7 @@ export const fetchTransactions = async (type: 'INCOME' | 'EXPENSE') => {
 
 export const fetchBenefits = async () => {
   const { data, error } = await supabase
-    .from('benefits')
+    .from('assetflow_benefits')
     .select('*')
     .order('next_payment_date', { ascending: true });
   if (error) throw error;
@@ -28,7 +29,7 @@ export const fetchBenefits = async () => {
 
 export const fetchPaydays = async () => {
   const { data, error } = await supabase
-    .from('paydays')
+    .from('assetflow_paydays')
     .select('*')
     .order('next_payday_date', { ascending: true });
   if (error) throw error;
@@ -36,17 +37,17 @@ export const fetchPaydays = async () => {
 };
 
 export const deleteTransaction = async (id: string, type: 'INCOME' | 'EXPENSE') => {
-  const table = type === 'INCOME' ? 'income' : 'expenses';
+  const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
   const { error } = await supabase.from(table).delete().eq('id', id);
   if (error) throw error;
 };
 
 export const deleteBenefit = async (id: string) => {
-  const { error } = await supabase.from('benefits').delete().eq('id', id);
+  const { error } = await supabase.from('assetflow_benefits').delete().eq('id', id);
   if (error) throw error;
 };
 
 export const deletePayday = async (id: string) => {
-  const { error } = await supabase.from('paydays').delete().eq('id', id);
+  const { error } = await supabase.from('assetflow_paydays').delete().eq('id', id);
   if (error) throw error;
 };

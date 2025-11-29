@@ -7,13 +7,13 @@ import { supabase } from '../lib/supabase';
 import { fetchBenefits, deleteBenefit } from '../services/data';
 import { Button, Input, Select, Card } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
-import { format, addDays, addWeeks, addMonths, addYears } from 'date-fns';
+import { format, addWeeks, addMonths, addYears } from 'date-fns';
 import { Plus, Trash2, X, RefreshCw } from 'lucide-react';
 import { Frequency } from '../types';
 
 const schema = z.object({
   benefit_name: z.string().min(2, 'Name is required'),
-  amount: z.string().transform((val) => Number(val)).refine((val) => val > 0, 'Amount must be positive'),
+  amount: z.coerce.number().positive('Amount must be positive'),
   frequency: z.enum(['WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'YEARLY']),
   next_payment_date: z.string().min(1, 'Date is required'),
 });
@@ -26,7 +26,7 @@ const Benefits: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   
   const { data: benefits = [], isLoading } = useQuery({ 
-    queryKey: ['benefits'], 
+    queryKey: ['assetflow_benefits'], 
     queryFn: fetchBenefits 
   });
 
@@ -36,14 +36,14 @@ const Benefits: React.FC = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const { error } = await supabase.from('benefits').insert([{
+      const { error } = await supabase.from('assetflow_benefits').insert([{
         user_id: user?.id,
         ...data
       }]);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['benefits'] });
+      queryClient.invalidateQueries({ queryKey: ['assetflow_benefits'] });
       setIsAdding(false);
       reset();
     }
@@ -51,7 +51,7 @@ const Benefits: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteBenefit,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['benefits'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assetflow_benefits'] })
   });
 
   const getNextDates = (dateStr: string, freq: Frequency, count: number = 3) => {

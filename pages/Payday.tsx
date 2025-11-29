@@ -24,7 +24,7 @@ const Payday: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   
   const { data: paydays = [], isLoading } = useQuery({ 
-    queryKey: ['paydays'], 
+    queryKey: ['assetflow_paydays'], 
     queryFn: fetchPaydays 
   });
 
@@ -34,14 +34,14 @@ const Payday: React.FC = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const { error } = await supabase.from('paydays').insert([{
+      const { error } = await supabase.from('assetflow_paydays').insert([{
         user_id: user?.id,
         ...data
       }]);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['paydays'] });
+      queryClient.invalidateQueries({ queryKey: ['assetflow_paydays'] });
       setIsAdding(false);
       reset();
     }
@@ -49,7 +49,7 @@ const Payday: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deletePayday,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['paydays'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assetflow_paydays'] })
   });
 
   const getFutureDates = (dateStr: string, freq: Frequency, count: number = 4) => {

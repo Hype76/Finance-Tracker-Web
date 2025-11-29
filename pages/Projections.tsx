@@ -3,14 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchTransactions, fetchBenefits } from '../services/data';
 import { Card } from '../components/UI';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { format, addMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 
 const Projections: React.FC = () => {
   // In a real app, we might need a more sophisticated backend calculation or more data fetching
   // Here we project based on averages and recurring benefits
-  const { data: income = [] } = useQuery({ queryKey: ['income'], queryFn: () => fetchTransactions('INCOME') });
-  const { data: expenses = [] } = useQuery({ queryKey: ['expenses'], queryFn: () => fetchTransactions('EXPENSE') });
-  const { data: benefits = [] } = useQuery({ queryKey: ['benefits'], queryFn: fetchBenefits });
+  const { data: income = [] } = useQuery({ queryKey: ['assetflow_income'], queryFn: () => fetchTransactions('INCOME') });
+  const { data: expenses = [] } = useQuery({ queryKey: ['assetflow_expenses'], queryFn: () => fetchTransactions('EXPENSE') });
+  const { data: benefits = [] } = useQuery({ queryKey: ['assetflow_benefits'], queryFn: fetchBenefits });
 
   const projectionData = useMemo(() => {
     // 1. Calculate average monthly expense (excluding current month partial data usually, but we keep it simple)

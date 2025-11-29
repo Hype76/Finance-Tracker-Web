@@ -13,7 +13,7 @@ import { Plus, Trash2, FileText, X } from 'lucide-react';
 
 const schema = z.object({
   title: z.string().min(2, 'Title is required'),
-  amount: z.string().transform((val) => Number(val)).refine((val) => val > 0, 'Amount must be positive'),
+  amount: z.coerce.number().positive('Amount must be positive'),
   date_paid: z.string().min(1, 'Date is required'),
   category: z.string().min(1, 'Category is required'),
   notes: z.string().optional(),
@@ -27,7 +27,7 @@ const Expenses: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { data: expenseList = [], isLoading } = useQuery({ 
-    queryKey: ['expenses'], 
+    queryKey: ['assetflow_expenses'], 
     queryFn: () => fetchTransactions('EXPENSE') 
   });
 
@@ -39,7 +39,7 @@ const Expenses: React.FC = () => {
 
   const mutation = useMutation({
     mutationFn: async (data: FormData & { attachment_url?: string }) => {
-      const { error } = await supabase.from('expenses').insert([{
+      const { error } = await supabase.from('assetflow_expenses').insert([{
         user_id: user?.id,
         title: data.title,
         amount: data.amount,
@@ -51,7 +51,7 @@ const Expenses: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['assetflow_expenses'] });
       setIsAdding(false);
       reset();
       setSelectedFile(null);
@@ -60,7 +60,7 @@ const Expenses: React.FC = () => {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteTransaction(id, 'EXPENSE'),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expenses'] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assetflow_expenses'] })
   });
 
   const onSubmit = async (data: FormData) => {
