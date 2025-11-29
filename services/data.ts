@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Transaction, Benefit, Payday } from '../types';
+import { Transaction, Benefit, Payday, RecurringExpense } from '../types';
 
 export const fetchTransactions = async (type: 'INCOME' | 'EXPENSE') => {
   const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
@@ -36,6 +36,21 @@ export const fetchPaydays = async () => {
   return data as Payday[];
 };
 
+export const fetchRecurringExpenses = async () => {
+  const { data, error } = await supabase
+    .from('assetflow_recurring_expenses')
+    .select('*')
+    .order('next_due_date', { ascending: true });
+  
+  // If table doesn't exist yet, return empty array to prevent app crash during setup
+  if (error && error.code === '42P01') { 
+    console.warn('Recurring expenses table not found. Please run SQL setup.');
+    return [];
+  }
+  if (error) throw error;
+  return data as RecurringExpense[];
+};
+
 export const deleteTransaction = async (id: string, type: 'INCOME' | 'EXPENSE') => {
   const table = type === 'INCOME' ? 'assetflow_income' : 'assetflow_expenses';
   const { error } = await supabase.from(table).delete().eq('id', id);
@@ -49,5 +64,10 @@ export const deleteBenefit = async (id: string) => {
 
 export const deletePayday = async (id: string) => {
   const { error } = await supabase.from('assetflow_paydays').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const deleteRecurringExpense = async (id: string) => {
+  const { error } = await supabase.from('assetflow_recurring_expenses').delete().eq('id', id);
   if (error) throw error;
 };

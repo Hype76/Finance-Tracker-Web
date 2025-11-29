@@ -36,6 +36,17 @@ export interface Payday {
   next_payday_date: string;
 }
 
+export interface RecurringExpense {
+  id: string;
+  user_id: string;
+  title: string;
+  amount: number;
+  category: string;
+  frequency: Frequency;
+  custom_value?: number;
+  next_due_date: string;
+}
+
 export interface ProjectionData {
   month: string;
   expectedIncome: number;

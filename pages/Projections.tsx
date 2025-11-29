@@ -1,86 +1,105 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchTransactions, fetchBenefits } from '../services/data';
+import { fetchTransactions, fetchBenefits, fetchRecurringExpenses } from '../services/data';
 import { Card } from '../components/UI';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { format, addMonths } from 'date-fns';
 
 const Projections: React.FC = () => {
-  // In a real app, we might need a more sophisticated backend calculation or more data fetching
-  // Here we project based on averages and recurring benefits
   const { data: income = [] } = useQuery({ queryKey: ['assetflow_income'], queryFn: () => fetchTransactions('INCOME') });
   const { data: expenses = [] } = useQuery({ queryKey: ['assetflow_expenses'], queryFn: () => fetchTransactions('EXPENSE') });
   const { data: benefits = [] } = useQuery({ queryKey: ['assetflow_benefits'], queryFn: fetchBenefits });
+  const { data: recurringBills = [] } = useQuery({ queryKey: ['assetflow_recurring_expenses'], queryFn: fetchRecurringExpenses });
 
   const projectionData = useMemo(() => {
-    // 1. Calculate average monthly expense (excluding current month partial data usually, but we keep it simple)
-    const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-    const avgExpense = totalExpenses / (expenses.length > 0 ? 3 : 1); // Mock divisor for demo
+    // 1. Calculate Historical Average (Variable Spending)
+    // We assume recurring bills handle fixed costs. 
+    // If recurring bills exist, we try not to double count. 
+    // For simplicity in this version, we take the average of all historical expenses 
+    // but if recurring bills are > 0, we treat historical avg as just 'variable' (maybe 50% of history? or full history + recurring?)
+    // Best Approach for Flip Value: Show the user the power of the "Upcoming Bills" feature.
     
-    // 2. Calculate recurring monthly benefit income
+    // Logic: Projected Expense = (Sum of Recurring Bills per month) + (Average Historical Expense * 0.2 buffer)
+    // If no recurring bills, use Full Historical Average.
+    
+    const totalHistoryExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const avgHistoryExpense = totalHistoryExpenses / (expenses.length > 0 ? 3 : 1); // Mock 3 month divisor
+
+    // 2. Calculate Monthly Value of Recurring Bills
+    const monthlyFixedCosts = recurringBills.reduce((acc, bill) => {
+      let monthlyVal = 0;
+      switch(bill.frequency) {
+        case 'WEEKLY': monthlyVal = (bill.amount * 52) / 12; break;
+        case 'FORTNIGHTLY': monthlyVal = (bill.amount * 26) / 12; break;
+        case 'MONTHLY': 
+        case 'SPECIFIC_DAY': monthlyVal = bill.amount; break;
+        case 'YEARLY': monthlyVal = bill.amount / 12; break;
+        case 'EVERY_X_DAYS':
+          const days = bill.custom_value || 30;
+          monthlyVal = (bill.amount * 365) / days / 12;
+          break;
+        default: monthlyVal = 0;
+      }
+      return acc + monthlyVal;
+    }, 0);
+
+    // Final Expense Projection Logic
+    let projectedMonthlyExpense = 0;
+    if (monthlyFixedCosts > 0) {
+      // If we have bills set up, assume history is mostly variable spending (food, etc)
+      // We'll add 50% of history avg as variable spending to the fixed costs
+      projectedMonthlyExpense = monthlyFixedCosts + (avgHistoryExpense * 0.5);
+    } else {
+      // Fallback if no bills set up
+      projectedMonthlyExpense = avgHistoryExpense > 0 ? avgHistoryExpense : 1500;
+    }
+
+    // 3. Calculate Recurring Income (Benefits)
     const monthlyBenefits = benefits.reduce((acc, b) => {
       let monthlyValue = 0;
       switch(b.frequency) {
-        case 'WEEKLY': 
-          monthlyValue = (b.amount * 52) / 12;
-          break;
-        case 'FORTNIGHTLY':
-          monthlyValue = (b.amount * 26) / 12;
-          break;
+        case 'WEEKLY': monthlyValue = (b.amount * 52) / 12; break;
+        case 'FORTNIGHTLY': monthlyValue = (b.amount * 26) / 12; break;
         case 'MONTHLY':
-        case 'SPECIFIC_DAY': // Assumes once per month
-          monthlyValue = b.amount;
-          break;
-        case 'YEARLY':
-          monthlyValue = b.amount / 12;
-          break;
+        case 'SPECIFIC_DAY': monthlyValue = b.amount; break;
+        case 'YEARLY': monthlyValue = b.amount / 12; break;
         case 'EVERY_X_DAYS':
           const days = b.custom_value || 1;
-          const paymentsPerYear = 365 / days;
-          monthlyValue = (b.amount * paymentsPerYear) / 12;
+          monthlyValue = (b.amount * 365) / days / 12;
           break;
-        default:
-          monthlyValue = 0;
+        default: monthlyValue = 0;
       }
       return acc + monthlyValue;
     }, 0);
 
-    // 3. Project for next 6 months
+    // 4. Project for next 6 months
     const data = [];
-    let currentSavings = 0; // Ideally fetched from current balance
+    let currentSavings = 0; 
     const now = new Date();
 
     for (let i = 0; i < 6; i++) {
       const monthDate = addMonths(now, i);
       const monthLabel = format(monthDate, 'MMM yyyy');
       
-      // Simple projection logic:
-      // Project Income = Last month's income (or avg) + Benefits
-      // Project Expenses = Avg Expenses
-      
-      // Note: This is a placeholder logic for the "Engine". 
-      // Real implementation would look at past trends more closely.
-      const projectedIncome = monthlyBenefits + 2000; // Mock salary base of 2000 if not found
-      const projectedExpenses = avgExpense || 1500; // Mock expense base
-
-      const net = projectedIncome - projectedExpenses;
+      const projectedIncome = monthlyBenefits + 2000; // Base salary assumption if no data
+      const net = projectedIncome - projectedMonthlyExpense;
       currentSavings += net;
 
       data.push({
         month: monthLabel,
         Income: projectedIncome,
-        Expenses: projectedExpenses,
+        Expenses: projectedMonthlyExpense,
         Savings: currentSavings
       });
     }
     return data;
-  }, [income, expenses, benefits]);
+  }, [income, expenses, benefits, recurringBills]);
 
   return (
     <div className="space-y-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Financial Projections</h1>
-        <p className="text-gray-500">Estimated growth over the next 6 months based on current trends.</p>
+        <p className="text-gray-500">Estimated growth over the next 6 months based on Recurring Bills and Income.</p>
       </div>
 
       <Card className="p-6 h-[400px]">
@@ -118,18 +137,31 @@ const Projections: React.FC = () => {
            </div>
         </Card>
         
-        <Card className="p-6 bg-primary-900 text-white">
-          <h3 className="font-semibold text-primary-100 mb-2">Projected 6-Month Result</h3>
-          <div className="mt-8 text-center">
-             <p className="text-primary-200">Estimated Total Savings</p>
-             <p className="text-4xl font-bold mt-2">
-               ${projectionData[projectionData.length - 1]?.Savings.toFixed(2)}
-             </p>
-             <p className="text-sm text-primary-300 mt-4">
-               *This is an estimate based on your recurring benefits and average spending habits.
-             </p>
-          </div>
-        </Card>
+        <div className="space-y-6">
+          <Card className="p-6 bg-primary-900 text-white">
+            <h3 className="font-semibold text-primary-100 mb-2">Projected 6-Month Result</h3>
+            <div className="mt-8 text-center">
+              <p className="text-primary-200">Estimated Total Savings</p>
+              <p className="text-4xl font-bold mt-2">
+                ${projectionData[projectionData.length - 1]?.Savings.toFixed(2)}
+              </p>
+            </div>
+          </Card>
+          
+          <Card className="p-6">
+             <h4 className="text-sm font-semibold text-gray-500 mb-2">Calculation Basis</h4>
+             <ul className="text-sm text-gray-600 space-y-2">
+               <li className="flex justify-between">
+                 <span>Recurring Income:</span>
+                 <span className="font-medium">Active</span>
+               </li>
+               <li className="flex justify-between">
+                 <span>Recurring Bills:</span>
+                 <span className="font-medium">{recurringBills.length > 0 ? 'Active (Preferred)' : 'None (Using History)'}</span>
+               </li>
+             </ul>
+          </Card>
+        </div>
       </div>
     </div>
   );
